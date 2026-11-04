@@ -56,7 +56,7 @@ options = vision.HandLandmarkerOptions(
     min_hand_detection_confidence=0.3,
 )
 os.makedirs(os.path.dirname(CHEMIN_SORTIE), exist_ok=True)
-entete = ["fichier", "personne", "main"]
+entete = ["main"]
 entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
 nb_ok = nb_echecs = 0
 
@@ -70,10 +70,9 @@ with (vision.HandLandmarker.create_from_options(options) as detecteur,
             nb_echecs += 1
             continue
         points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
-        nom = os.path.basename(chemin)
         main_detectee = resultat.handedness[0][0].category_name
         vecteur = np.round(normaliser(points), 6).tolist()
-        w.writerow([nom, nom.split("_")[0], main_detectee, *vecteur, classe])
+        w.writerow([main_detectee, *vecteur, classe])
         nb_ok += 1
         if nb_ok % 1000 == 0:
             print(f"{nb_ok} images traitées...")
