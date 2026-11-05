@@ -1,7 +1,7 @@
 """Extraction des points de repère de la main (MediaPipe) vers un CSV d'entraînement.
 
 Parcourt asl_processed/train/<classe>/*.jpg et écrit une ligne par image :
-    fichier, personne, main, x0, y0, z0, ..., x20, y20, z20, classe
+    personne, main, x0, y0, z0, ..., x20, y20, z20, classe
 """
 
 import csv
@@ -56,7 +56,7 @@ options = vision.HandLandmarkerOptions(
     min_hand_detection_confidence=0.3,
 )
 os.makedirs(os.path.dirname(CHEMIN_SORTIE), exist_ok=True)
-entete = ["main"]
+entete = ["personne", "main"]
 entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
 nb_ok = nb_echecs = 0
 
@@ -70,9 +70,10 @@ with (vision.HandLandmarker.create_from_options(options) as detecteur,
             nb_echecs += 1
             continue
         points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
+        personne = os.path.basename(chemin).split("_")[0]
         main_detectee = resultat.handedness[0][0].category_name
         vecteur = np.round(normaliser(points), 6).tolist()
-        w.writerow([main_detectee, *vecteur, classe])
+        w.writerow([personne, main_detectee, *vecteur, classe])
         nb_ok += 1
         if nb_ok % 1000 == 0:
             print(f"{nb_ok} images traitées...")
