@@ -1,6 +1,9 @@
 # Dataset
 asl_processed/
 
+# Personnel
+Personnel/
+
 # Énoncé
 *.pdf
 
