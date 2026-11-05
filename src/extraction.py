@@ -1,7 +1,7 @@
 """Extraction des points de repère de la main (MediaPipe) vers un CSV d'entraînement.
 
 Parcourt asl_processed/train/<classe>/*.jpg et écrit une ligne par image :
-    personne, main, x0, y0, z0, ..., x20, y20, z20, classe
+    personne, x0, y0, z0, ..., x20, y20, z20, classe
 """
 
 import csv
@@ -13,10 +13,24 @@ from mediapipe.tasks.python import BaseOptions, vision
 
 DOSSIER_SRC = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(DOSSIER_SRC)
+
 DOSSIER_IMAGES = os.path.join(RACINE, "asl_processed", "train")
 CHEMIN_MODELE = os.path.join(DOSSIER_SRC, "hand_landmarker.task")
 CHEMIN_SORTIE = os.path.join(RACINE, "donnees", "asl_landmarks.csv")
 MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % -> 99 %)
+
+
+def verifier_dossier(dossier: str) -> None:
+    """Vérifie que le dossier d'images existe.
+
+    :param dossier: dossier contenant un sous-dossier par classe.
+    :raises FileNotFoundError: si le dossier est absent (ou n'est pas un dossier).
+    """
+    if not os.path.isdir(dossier):
+        raise FileNotFoundError(
+            "Assurez-vous d'avoir les dossiers par classe dans ce format "
+            f"à la racine du projet : asl_processed/train/ (cherché : {dossier})"
+        )
 
 
 def iterer_images(dossier: str):
@@ -51,33 +65,38 @@ def normaliser(points: np.ndarray) -> np.ndarray:
     centres = points - points[0]
     return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
 
-# détection par MediaPipe, puis ajout d'une ligne au CSV si détection valide
-options = vision.HandLandmarkerOptions(
-    base_options=BaseOptions(model_asset_path=CHEMIN_MODELE),
-    num_hands=1,
-    min_hand_detection_confidence=0.3,
-)
-os.makedirs(os.path.dirname(CHEMIN_SORTIE), exist_ok=True)
-entete = ["personne", "main"]
-entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
-nb_ok = nb_echecs = 0
+def main() -> None:
+    """Détection par MediaPipe, puis ajout d'une ligne au CSV si détection valide."""
+    verifier_dossier(DOSSIER_IMAGES)
+    options = vision.HandLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=CHEMIN_MODELE),
+        num_hands=1,
+        min_hand_detection_confidence=0.3,
+    )
+    os.makedirs(os.path.dirname(CHEMIN_SORTIE), exist_ok=True)
+    entete = ["personne"]
+    entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
+    nb_ok = nb_echecs = 0
 
-with (vision.HandLandmarker.create_from_options(options) as detecteur,
-      open(CHEMIN_SORTIE, "w", newline="", encoding="utf-8") as fichier):
-    w = csv.writer(fichier)
-    w.writerow(entete)
-    for chemin, classe in iterer_images(DOSSIER_IMAGES):
-        resultat = detecteur.detect(charger_image(chemin))
-        if not resultat.hand_landmarks:
-            nb_echecs += 1
-            continue
-        points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
-        personne = os.path.basename(chemin).split("_")[0]
-        main_detectee = resultat.handedness[0][0].category_name
-        vecteur = np.round(normaliser(points), 6).tolist()
-        w.writerow([personne, main_detectee, *vecteur, classe])
-        nb_ok += 1
-        if nb_ok % 1000 == 0:
-            print(f"{nb_ok} images traitées...")
+    with (vision.HandLandmarker.create_from_options(options) as detecteur,
+          open(CHEMIN_SORTIE, "w", newline="", encoding="utf-8") as fichier):
+        w = csv.writer(fichier)
+        w.writerow(entete)
+        for chemin, classe in iterer_images(DOSSIER_IMAGES):
+            resultat = detecteur.detect(charger_image(chemin))
+            if not resultat.hand_landmarks:
+                nb_echecs += 1
+                continue
+            points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
+            personne = os.path.basename(chemin).split("_")[0]
+            vecteur = np.round(normaliser(points), 6).tolist()
+            w.writerow([personne, *vecteur, classe])
+            nb_ok += 1
+            if nb_ok % 1000 == 0:
+                print(f"{nb_ok} images traitées...")
 
-print(f"Terminé : {nb_ok} vecteurs, {nb_echecs} images sans main détectée.")
+    print(f"Terminé : {nb_ok} vecteurs, {nb_echecs} images sans main détectée.")
+
+
+if __name__ == "__main__":
+    main()
