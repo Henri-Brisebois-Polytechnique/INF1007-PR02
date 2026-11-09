@@ -4,3 +4,5 @@ pytest>=8
 pytest-cov>=5
 joblib
 scikit-learn
+pandas
+gradio==6.31.0
