@@ -7,9 +7,10 @@ Parcourt asl_processed/train/<classe>/*.jpg et écrit une ligne par image :
 import csv
 import os
 
-import mediapipe as mp
 import numpy as np
 from mediapipe.tasks.python import BaseOptions, vision
+
+from tools import charger_image, normaliser
 
 DOSSIER_SRC = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(DOSSIER_SRC)
@@ -17,7 +18,6 @@ RACINE = os.path.dirname(DOSSIER_SRC)
 DOSSIER_IMAGES = os.path.join(RACINE, "asl_processed", "train")
 CHEMIN_MODELE = os.path.join(DOSSIER_SRC, "hand_landmarker.task")
 CHEMIN_SORTIE = os.path.join(RACINE, "donnees", "asl_landmarks.csv")
-MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % -> 99 %)
 
 
 def verifier_dossier(dossier: str) -> None:
@@ -44,27 +44,6 @@ def iterer_images(dossier: str):
             yield os.path.join(dossier, classe, nom), classe
 
 
-def charger_image(chemin: str) -> mp.Image:
-    """Charge une image et l'entoure d'une bordure (répétition des bords).
-
-    :param chemin: chemin de l'image.
-    :return: image MediaPipe.
-    """
-    pixels = mp.Image.create_from_file(chemin).numpy_view()[..., :3]
-    p = int(max(pixels.shape[:2]) * MARGE)
-    pixels = np.pad(pixels, ((p, p), (p, p), (0, 0)), mode="edge")
-    return mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(pixels))
-
-
-def normaliser(points: np.ndarray) -> np.ndarray:
-    """Centre les 21 points sur le poignet et les met à l'échelle (calcul vectorisé).
-
-    :param points: tableau (21, 3) des coordonnées MediaPipe.
-    :return: tableau (63,) des coordonnées normalisées.
-    """
-    centres = points - points[0]
-    return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
-
 def main() -> None:
     """Détection par MediaPipe, puis ajout d'une ligne au CSV si détection valide."""
     verifier_dossier(DOSSIER_IMAGES)
@@ -83,7 +62,7 @@ def main() -> None:
         w = csv.writer(fichier)
         w.writerow(entete)
         for chemin, classe in iterer_images(DOSSIER_IMAGES):
-            resultat = detecteur.detect(charger_image(chemin))
+            resultat = detecteur.detect(charger_image(chemin, marge=True))
             if not resultat.hand_landmarks:
                 nb_echecs += 1
                 continue
