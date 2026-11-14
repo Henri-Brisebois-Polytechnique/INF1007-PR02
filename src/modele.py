@@ -1,4 +1,5 @@
-from config import GRAINE
+from config import GRAINE, COLONNE_CIBLE, PERSONNES_A_TESTER, CHEMIN_CSV, CHEMIN_MODELE, CHEMIN_META
+from donnees import charger_csv, filtrer_personnes, preparer_entrees
 
 import os
 
@@ -70,8 +71,7 @@ def sauvegarder(modele: RandomForestClassifier, X: pd.DataFrame, chemin_modele: 
     chemin_meta = os.path.join(location, chemin_meta)
 
     for chemin in (chemin_modele, chemin_meta):
-        if not os.path.exists(chemin): # vérifie que le dossier n'existe pas déjà
-            os.mkdir(chemin) # création du dossier à l'endroit voulu
+        os.makedirs(os.path.dirname(chemin), exist_ok=True)  # crée le dossier parent au besoin, dirname extrait la portion "directory"
  
     joblib.dump(modele, chemin_modele) # enregistre le modèle dans un fichier pour le recharger plus tard
     with open(chemin_meta, "w", encoding="utf-8") as fichier:
@@ -81,19 +81,27 @@ def sauvegarder(modele: RandomForestClassifier, X: pd.DataFrame, chemin_modele: 
 def charger_modele(chemin_modele: str) -> RandomForestClassifier:
     """Recharge un modèle sauvegardé.
  
-    Échoue : FileNotFoundError si le fichier n'existe pas.
+    Renvoie : le modèle entraîné au préalable.
     """
     location = os.path.join(os.getcwd(), chemin_modele) #creation du chemin qu'on va utiliser pour retourner le modèle
     #IMPORTANT! démarrer le fichier python du dossier INF007-PR02 (celui qui contient donnees/modele)
 
     return joblib.load(location)  # recharge l’objet enregistré dans le fichier
 
+def main() -> RandomForestClassifier:
+    """Enchaîne tout l'entraînement : chargement, filtrage, entraînement, sauvegarde.
 
-# DEVRAIS-JE METTRE ÇA DANS UN MAIN() OR SOMETHING... 
+    Renvoie : le modèle entraîné.
+    Échoue : FileNotFoundError si le CSV est introuvable,
+             OSError si la sauvegarde est impossible.
+    """
+    df = charger_csv(CHEMIN_CSV)
+    df_train = filtrer_personnes(df, PERSONNES_A_TESTER)
+    entrees_X, entrees_y = preparer_entrees(df_train, COLONNE_CIBLE)
+    foret_vierge = construire_modele()
+    foret_entrainee = entrainer(foret_vierge, entrees_X, entrees_y)
+    sauvegarder(foret_entrainee, entrees_X, CHEMIN_MODELE, CHEMIN_META)
+    return foret_entrainee
 
-# df = charger_csv(CHEMIN_CSV)
-# df_train = filtrer_personnes(df, PERSONNES_A_TESTER)
-# entrees_X, entrees_y = preparer_entrees(df_train, COLONNE_CIBLE)
-# foret_vierge = construire_modele()
-# foret_entrainee = entrainer(foret_vierge, entrees_X, entrees_y)
-# sauvegarder(foret_entrainee, entrees_X, CHEMIN_MODELE, CHEMIN_META)
+if __name__ == "__main__":
+    main()
