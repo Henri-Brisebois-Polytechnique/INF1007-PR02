@@ -1,0 +1,32 @@
+
+"""Exceptions personnalisées du projet.
+ 
+Hiérarchie :
+ 
+    ProjetError
+    ├── DonneeInvalideError                  (problèmes liés aux données)
+    │   ├── FichierDonneesIntrouvableError
+    │   ├── ColonneManquanteError
+    │   └── PersonneAbsenteError
+    └── ModeleError                          (problèmes liés au modèle)
+        ├── ModeleIntrouvableError
+        ├── EntrainementImpossibleError
+        └── SauvegardeError
+ 
+Un seul « except ProjetError » attrape toutes les erreurs du projet ;
+un « except DonneeInvalideError » attrape seulement celles des données.
+"""
+
+class ProjetError(Exception): pass
+
+
+class DonneeInvalideError(ProjetError): pass
+
+class FichierDonneesIntrouvableError(DonneeInvalideError): pass
+class ColonneManquanteError(DonneeInvalideError): pass
+class PersonneAbsenteError(DonneeInvalideError): pass
+
+class ModeleError(ProjetError): pass
+
+class ModeleIntrouvableError(ModeleError): pass
+class SauvegardeError(ModeleError): pass
