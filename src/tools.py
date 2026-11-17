@@ -4,6 +4,7 @@ from exceptions import ModeleIntrouvableError
 
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions, vision
+from mediapipe.tasks.python.vision.hand_landmarker import HandLandmarker
 import numpy as np
 
 import time
@@ -16,7 +17,10 @@ from collections.abc import Callable
 
 MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % -> 99 %)
 
-def detecteur():
+def detecteur() -> HandLandmarker:
+    """Retourne le détecteur MediaPipe, construit à partir du fichier .task fournit par Google.
+    :return: objet HandLandmarker, le modèle.
+    """
     options = vision.HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=CHEMIN_TASK),
         num_hands=1,
@@ -49,6 +53,12 @@ def normaliser(points: np.ndarray) -> np.ndarray:
     return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
 
 def extraire_vecteur(detecteur, image: mp.Image) -> np.ndarray | None:
+    """Récupère les vecteurs d'une image avec MediaPipe pour le traitement par le classificateur.
+    
+    :param detecteur: objet HandLandmarker représentant le modèle MediaPipe
+    :param image: image MediaPipe.
+    :return: tableau (63,) des coordonnées normalisées (de normaliser(points)).
+    """
     resultat = detecteur.detect(image)
     if not resultat.hand_landmarks:
         return None
