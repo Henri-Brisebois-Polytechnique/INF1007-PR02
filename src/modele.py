@@ -1,5 +1,5 @@
-from config import GRAINE, COLONNE_CIBLE, PERSONNES_A_TESTER, CHEMIN_CSV, CHEMIN_MODELE, CHEMIN_META
-from donnees import charger_csv, filtrer_personnes, preparer_entrees
+from config import GRAINE, COLONNE_CIBLE, PERSONNES_TRAIN, CHEMIN_CSV, CHEMIN_MODELE, CHEMIN_META
+from donnees import JeuDonnees, charger_csv
 from tools import chronometrer
 from exceptions import EntrainementImpossibleError
 
@@ -15,9 +15,10 @@ from sklearn.ensemble import RandomForestClassifier
 class Modele:
     """Modele qui peut être entraîné sur un jeu de données traîté"""
 
-    def __init__(self, modele: RandomForestClassifier) -> None:
+    def __init__(self) -> None:
         self._foret = self.construire_modele()
 
+    @staticmethod
     def construire_modele() -> RandomForestClassifier:
         """Construit la forêt aléatoire (non entraînée).
     
@@ -26,7 +27,7 @@ class Modele:
         return RandomForestClassifier(n_estimators=200, random_state=GRAINE, n_jobs=-1)
 
     @chronometrer
-    def entrainer(self, X: pd.DataFrame, y: pd.Series) -> RandomForestClassifier:
+    def entrainer(self, X: pd.DataFrame, y: pd.Series) -> "Modele":
         """Entraîne le modèle sur les données d'entraînement.
     
         Reçoit : le modèle, les caractéristiques X et la cible y.
@@ -73,18 +74,18 @@ class Modele:
     
         joblib.dump(self._foret, chemin_modele) # enregistre le modèle dans un fichier pour le recharger plus tard
         with open(chemin_meta, "w", encoding="utf-8") as fichier:
-            json.dump(self.creer_metadonnees(X, self._foret), fichier, indent=2, ensure_ascii=False)
+            json.dump(self.creer_metadonnees(X), fichier, indent=2, ensure_ascii=False)
 
-def main() -> RandomForestClassifier:
+def main() -> Modele:
     """Enchaîne tout l'entraînement : chargement, filtrage, entraînement, sauvegarde.
 
     Renvoie : le modèle entraîné.
     Échoue : FileNotFoundError si le CSV est introuvable,
              OSError si la sauvegarde est impossible.
     """
-    df = charger_csv(CHEMIN_CSV)
-    df_train = filtrer_personnes(df, PERSONNES_A_TESTER)
-    entrees_X, entrees_y = preparer_entrees(df_train, COLONNE_CIBLE)
+    jeu = JeuDonnees(charger_csv(CHEMIN_CSV), COLONNE_CIBLE)
+    jeu.filtrer_personnes(PERSONNES_TRAIN)
+    entrees_X, entrees_y = jeu.preparer_entrees()
     foret = Modele()
     foret.entrainer(entrees_X, entrees_y)
     foret.sauvegarder(entrees_X, CHEMIN_MODELE, CHEMIN_META)
