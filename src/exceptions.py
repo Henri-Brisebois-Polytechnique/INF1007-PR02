@@ -27,3 +27,5 @@ class ColonneManquanteError(DonneeInvalideError): pass
 class ModeleError(ProjetError): pass
 
 class ModeleIntrouvableError(ModeleError): pass
+class EntrainementImpossibleError(ModeleError): pass
+
