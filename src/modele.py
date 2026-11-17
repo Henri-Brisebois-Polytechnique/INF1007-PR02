@@ -1,6 +1,7 @@
 from config import GRAINE, COLONNE_CIBLE, PERSONNES_A_TESTER, CHEMIN_CSV, CHEMIN_MODELE, CHEMIN_META
-from donnees import charger_csv, filtrer_personnes, preparer_entrees
+
 from tools import chronometrer
+from donnees import JeuDonnees, charger_csv
 
 import os
 
@@ -70,9 +71,9 @@ def main() -> RandomForestClassifier:
     Échoue : FileNotFoundError si le CSV est introuvable,
              OSError si la sauvegarde est impossible.
     """
-    df = charger_csv(CHEMIN_CSV)
-    df_train = filtrer_personnes(df, PERSONNES_A_TESTER)
-    entrees_X, entrees_y = preparer_entrees(df_train, COLONNE_CIBLE)
+    jeu = JeuDonnees(charger_csv(CHEMIN_CSV), COLONNE_CIBLE)
+    jeu.filtrer_personnes(PERSONNES_A_TESTER)
+    entrees_X, entrees_y = jeu.preparer_entrees()
     foret_vierge = construire_modele()
     foret_entrainee = entrainer(foret_vierge, entrees_X, entrees_y)
     sauvegarder(foret_entrainee, entrees_X, CHEMIN_MODELE, CHEMIN_META)
