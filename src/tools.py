@@ -3,6 +3,7 @@
 from exceptions import ModeleIntrouvableError
 
 import mediapipe as mp
+from mediapipe.tasks.python import BaseOptions, vision
 import numpy as np
 
 import time
@@ -13,6 +14,14 @@ from sklearn.ensemble import RandomForestClassifier
 from collections.abc import Callable
 
 MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % -> 99 %)
+
+def detecteur(model):
+    options = vision.HandLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=model),
+        num_hands=1,
+        min_hand_detection_confidence=0.3,
+    )
+    return vision.HandLandmarker.create_from_options(options)
 
 
 def charger_image(chemin: str, marge: bool = False) -> mp.Image:
@@ -37,6 +46,13 @@ def normaliser(points: np.ndarray) -> np.ndarray:
     """
     centres = points - points[0]
     return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
+
+def extraire_vecteur(detecteur, image: mp.Image) -> np.ndarray | None:
+    resultat = detecteur.detect(image)
+    if not resultat.hand_landmarks:
+        return None
+    points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
+    return normaliser(points)
 
 def chronometrer(fonction: Callable) -> Callable:
     """Décorateur qui affiche le temps d'exécution d'une fonction."""

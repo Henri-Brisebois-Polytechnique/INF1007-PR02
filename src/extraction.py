@@ -8,9 +8,8 @@ import csv
 import os
 
 import numpy as np
-from mediapipe.tasks.python import BaseOptions, vision
 
-from tools import charger_image, normaliser
+from tools import detecteur, charger_image, normaliser, extraire_vecteur, chronometrer
 
 DOSSIER_SRC = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(DOSSIER_SRC)
@@ -43,33 +42,26 @@ def iterer_images(dossier: str):
         for nom in sorted(os.listdir(os.path.join(dossier, classe))):
             yield os.path.join(dossier, classe, nom), classe
 
-
+@chronometrer
 def main() -> None:
     """Détection par MediaPipe, puis ajout d'une ligne au CSV si détection valide."""
     verifier_dossier(DOSSIER_IMAGES)
-    options = vision.HandLandmarkerOptions(
-        base_options=BaseOptions(model_asset_path=CHEMIN_MODELE),
-        num_hands=1,
-        min_hand_detection_confidence=0.3,
-    )
     os.makedirs(os.path.dirname(CHEMIN_SORTIE), exist_ok=True)
     entete = ["personne"]
     entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
     nb_ok = nb_echecs = 0
 
-    with (vision.HandLandmarker.create_from_options(options) as detecteur,
+    with (detecteur(CHEMIN_MODELE) as d,
           open(CHEMIN_SORTIE, "w", newline="", encoding="utf-8") as fichier):
         w = csv.writer(fichier)
         w.writerow(entete)
         for chemin, classe in iterer_images(DOSSIER_IMAGES):
-            resultat = detecteur.detect(charger_image(chemin, marge=True))
-            if not resultat.hand_landmarks:
+            vecteur = extraire_vecteur(d, charger_image(chemin, marge=True))
+            if vecteur is None:
                 nb_echecs += 1
                 continue
-            points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
             personne = os.path.basename(chemin).split("_")[0]
-            vecteur = np.round(normaliser(points), 6).tolist()
-            w.writerow([personne, *vecteur, classe])
+            w.writerow([personne, *np.round(vecteur,6).tolist(), classe])
             nb_ok += 1
             if nb_ok % 1000 == 0:
                 print(f"{nb_ok} images traitées...")
