@@ -6,11 +6,10 @@ Hiérarchie :
     ProjetError
     ├── DonneeInvalideError                  (problèmes liés aux données)
     │   ├── FichierDonneesIntrouvableError
-    │   ├── ColonneManquanteError
-    │   └── PersonneAbsenteError
+    │   └── ColonneManquanteError
     └── ModeleError                          (problèmes liés au modèle)
         ├── ModeleIntrouvableError
-        └── SauvegardeError
+        └── EntrainementImpossibleError
  
 Un seul « except ProjetError » attrape toutes les erreurs du projet ;
 un « except DonneeInvalideError » attrape seulement celles des données.
