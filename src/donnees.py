@@ -1,4 +1,5 @@
 from config import COLONNE_PERSONNE
+from exceptions import FichierDonneesIntrouvableError, ColonneManquanteError
 
 import os
 import pandas as pd
@@ -30,7 +31,9 @@ class JeuDonnees:
         Renvoie : un tuple (X, y).
         """
         a_retirer = [self._cible, COLONNE_PERSONNE]
-        X = self._df.drop(columns=[c for c in a_retirer if c in self._df.columns]) #conserve toutes les colonnes qu'on ne souhaite pas retirer
+        if self._cible not in self._df.columns:
+            raise ColonneManquanteError("La colonne cible n'existe pas dans le DataFrame")
+        X = self._df.drop(columns=a_retirer) #conserve toutes les colonnes qu'on ne souhaite pas retirer
         y = self._df[self._cible] # conserve uniquement la colonne cible
         return X, y
 
@@ -42,6 +45,9 @@ def charger_csv(chemin: str) -> pd.DataFrame:
     """
     location = os.path.join(os.getcwd(), chemin) #creation du chemin qu'on va utiliser pour lire le csv
         #IMPORTANT! démarrer le fichier python du dossier INF007-PR02 (celui qui contient donnees/asl_landmarks.csv)
+
+    if not os.path.exists(location):
+        raise FichierDonneesIntrouvableError("Les données sont introuvables.")
 
     with open(location, "r", encoding="utf-8") as fichier:
         df = pd.read_csv(fichier)
