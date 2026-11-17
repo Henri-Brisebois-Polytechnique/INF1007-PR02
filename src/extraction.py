@@ -10,14 +10,7 @@ import os
 import numpy as np
 
 from tools import detecteur, charger_image, normaliser, extraire_vecteur, chronometrer
-
-DOSSIER_SRC = os.path.dirname(os.path.abspath(__file__))
-RACINE = os.path.dirname(DOSSIER_SRC)
-
-DOSSIER_IMAGES = os.path.join(RACINE, "asl_processed", "train")
-
-CHEMIN_SORTIE = os.path.join(RACINE, "donnees", "asl_landmarks.csv")
-
+from config import DOSSIER_SRC, RACINE, DOSSIER_IMAGES, CHEMIN_SORTIE
 
 def verifier_dossier(dossier: str) -> None:
     """Vérifie que le dossier d'images existe.

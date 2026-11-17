@@ -9,7 +9,7 @@ import numpy as np
 import time
 import os
 import joblib
-from config import CHEMIN_MODELE
+from config import CHEMIN_TASK
 
 from sklearn.ensemble import RandomForestClassifier
 from collections.abc import Callable
@@ -18,7 +18,7 @@ MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % ->
 
 def detecteur():
     options = vision.HandLandmarkerOptions(
-        base_options=BaseOptions(model_asset_path=CHEMIN_MODELE),
+        base_options=BaseOptions(model_asset_path=CHEMIN_TASK),
         num_hands=1,
         min_hand_detection_confidence=0.3,
     )
