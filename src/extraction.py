@@ -6,11 +6,9 @@ Parcourt asl_processed/train/<classe>/*.jpg et écrit une ligne par image :
 
 import csv
 import os
-
 import numpy as np
-
 from tools import detecteur, charger_image, extraire_vecteur, chronometrer
-from config import DOSSIER_SRC, RACINE, DOSSIER_IMAGES, CHEMIN_SORTIE
+from config import DOSSIER_SRC, RACINE, DOSSIER_IMAGES_TRAIN, CHEMIN_SORTIE
 
 def verifier_dossier(dossier: str) -> None:
     """Vérifie que le dossier d'images existe.
@@ -38,7 +36,7 @@ def iterer_images(dossier: str):
 @chronometrer
 def main() -> None:
     """Détection par MediaPipe, puis ajout d'une ligne au CSV si détection valide."""
-    verifier_dossier(DOSSIER_IMAGES)
+    verifier_dossier(DOSSIER_IMAGES_TRAIN)
     os.makedirs(os.path.dirname(CHEMIN_SORTIE), exist_ok=True)
     entete = ["personne"]
     entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
@@ -48,7 +46,7 @@ def main() -> None:
           open(CHEMIN_SORTIE, "w", newline="", encoding="utf-8") as fichier):
         w = csv.writer(fichier)
         w.writerow(entete)
-        for chemin, classe in iterer_images(DOSSIER_IMAGES):
+        for chemin, classe in iterer_images(DOSSIER_IMAGES_TRAIN):
             vecteur = extraire_vecteur(d, charger_image(chemin, marge=True))
             if vecteur is None:
                 nb_echecs += 1
