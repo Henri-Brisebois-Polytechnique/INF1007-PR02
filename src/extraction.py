@@ -15,7 +15,7 @@ DOSSIER_SRC = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(DOSSIER_SRC)
 
 DOSSIER_IMAGES = os.path.join(RACINE, "asl_processed", "train")
-CHEMIN_MODELE = os.path.join(DOSSIER_SRC, "hand_landmarker.task")
+
 CHEMIN_SORTIE = os.path.join(RACINE, "donnees", "asl_landmarks.csv")
 
 
@@ -51,7 +51,7 @@ def main() -> None:
     entete += [f"{axe}{i}" for i in range(21) for axe in "xyz"] + ["classe"]
     nb_ok = nb_echecs = 0
 
-    with (detecteur(CHEMIN_MODELE) as d,
+    with (detecteur() as d,
           open(CHEMIN_SORTIE, "w", newline="", encoding="utf-8") as fichier):
         w = csv.writer(fichier)
         w.writerow(entete)
