@@ -1,7 +1,16 @@
 """Outils communs de traitement d'image, partagés par l'extraction et l'interface."""
 
+from exceptions import ModeleIntrouvableError
+
 import mediapipe as mp
 import numpy as np
+
+import time
+import os
+import joblib
+
+from sklearn.ensemble import RandomForestClassifier
+from collections.abc import Callable
 
 MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % -> 99 %)
 
@@ -28,3 +37,30 @@ def normaliser(points: np.ndarray) -> np.ndarray:
     """
     centres = points - points[0]
     return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
+
+def chronometrer(fonction: Callable) -> Callable:
+    """Décorateur qui affiche le temps d'exécution d'une fonction."""
+ 
+    def enveloppe(*args, **kwargs): # *args récupère les arguments positionnels ; **kwargs récupère les arguments nommés.
+        """Chronomètre l'appel à la fonction et renvoie son résultat."""
+        debut = time.perf_counter() # Enregistre l'heure de début
+        resultat = fonction(*args, **kwargs) # Appelle la fonction avec ses arguments
+        duree = time.perf_counter() - debut # Prends en note l'heure de fin et calcule le temps écoulé
+        print(f"[{fonction.__name__}] terminé en {duree:.2f} s") # Affiche la durée
+        return resultat # Renvoie le résultat de la fonction
+ 
+    return enveloppe # Renvoie la fonction enveloppe qui remplace la fonction originale
+
+def charger_modele(chemin_modele: str) -> RandomForestClassifier:
+    """Recharge un modèle sauvegardé.
+ 
+    Renvoie : le modèle entraîné au préalable.
+    """
+    
+    location = os.path.join(os.getcwd(), chemin_modele) #creation du chemin qu'on va utiliser pour retourner le modèle
+    #IMPORTANT! démarrer le fichier python du dossier INF007-PR02 (celui qui contient donnees/modele)
+
+    if not os.path.exists(location):
+        raise ModeleIntrouvableError("Le modèle est introuvable.")
+
+    return joblib.load(location)  # recharge l’objet enregistré dans le fichier

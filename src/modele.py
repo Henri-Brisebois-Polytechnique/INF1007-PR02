@@ -1,30 +1,15 @@
 from config import GRAINE, COLONNE_CIBLE, PERSONNES_A_TESTER, CHEMIN_CSV, CHEMIN_MODELE, CHEMIN_META
 from donnees import charger_csv, filtrer_personnes, preparer_entrees
+from tools import chronometrer
 
 import os
 
 import json
-import time
-from collections.abc import Callable
  
 import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-
-
-def chronometrer(fonction: Callable) -> Callable:
-    """Décorateur qui affiche le temps d'exécution d'une fonction."""
- 
-    def enveloppe(*args, **kwargs): # *args récupère les arguments positionnels ; **kwargs récupère les arguments nommés.
-        """Chronomètre l'appel à la fonction et renvoie son résultat."""
-        debut = time.perf_counter() # Enregistre l'heure de début
-        resultat = fonction(*args, **kwargs) # Appelle la fonction avec ses arguments
-        duree = time.perf_counter() - debut # Prends en note l'heure de fin et calcule le temps écoulé
-        print(f"[{fonction.__name__}] terminé en {duree:.2f} s") # Affiche la durée
-        return resultat # Renvoie le résultat de la fonction
- 
-    return enveloppe # Renvoie la fonction enveloppe qui remplace la fonction originale
  
 def construire_modele() -> RandomForestClassifier:
     """Construit la forêt aléatoire (non entraînée).
@@ -77,16 +62,6 @@ def sauvegarder(modele: RandomForestClassifier, X: pd.DataFrame, chemin_modele: 
     with open(chemin_meta, "w", encoding="utf-8") as fichier:
         json.dump(creer_metadonnees(X, modele), fichier, indent=2, ensure_ascii=False)
 
-
-def charger_modele(chemin_modele: str) -> RandomForestClassifier:
-    """Recharge un modèle sauvegardé.
- 
-    Renvoie : le modèle entraîné au préalable.
-    """
-    location = os.path.join(os.getcwd(), chemin_modele) #creation du chemin qu'on va utiliser pour retourner le modèle
-    #IMPORTANT! démarrer le fichier python du dossier INF007-PR02 (celui qui contient donnees/modele)
-
-    return joblib.load(location)  # recharge l’objet enregistré dans le fichier
 
 def main() -> RandomForestClassifier:
     """Enchaîne tout l'entraînement : chargement, filtrage, entraînement, sauvegarde.
