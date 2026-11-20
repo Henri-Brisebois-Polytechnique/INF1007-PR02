@@ -16,6 +16,7 @@ from sklearn.ensemble import RandomForestClassifier
 from collections.abc import Callable
 
 MARGE = 0.25  # bordure ajoutée autour de l'image : aide la détection (92 % -> 99 %)
+MAIN_DU_JEU = "Right"  # le jeu de données contient uniquement des images de la main droite
 
 def detecteur() -> HandLandmarker:
     """Retourne le détecteur MediaPipe, construit à partir du fichier .task fournit par Google.
@@ -52,7 +53,7 @@ def normaliser(points: np.ndarray) -> np.ndarray:
     centres = points - points[0]
     return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
 
-def extraire_vecteur(detecteur : HandLandmarker, image: mp.Image, normaliser: bool = True) -> np.ndarray | HandLandmarkerResult | None:
+def extraire_vecteur(detecteur : HandLandmarker, image: mp.Image, norm: bool = True) -> np.ndarray | HandLandmarkerResult | None:
     """Récupère les vecteurs d'une image avec MediaPipe pour le traitement par le classificateur.
     
     :param detecteur: objet HandLandmarker représentant le modèle MediaPipe
@@ -64,11 +65,12 @@ def extraire_vecteur(detecteur : HandLandmarker, image: mp.Image, normaliser: bo
     resultat = detecteur.detect(image)
     if not resultat.hand_landmarks:
         return None
-    if(normaliser):
+    if norm:
         points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
+        if resultat.handedness[0][0].category_name != MAIN_DU_JEU:
+            points[:, 0] *= -1  # autre main = image miroir : inverser x la ramène à celle du jeu
         return normaliser(points)
-    else:
-        return resultat
+    return resultat
 
 def chronometrer(fonction: Callable) -> Callable:
     """Décorateur qui affiche le temps d'exécution d'une fonction."""
