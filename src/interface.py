@@ -6,6 +6,8 @@ import config
 import pandas as pd
 import gradio as gr
 
+MODELE=charger_modele(config.CHEMIN_MODELE)
+
 
 def gradio_video(img_input: gr.Image) -> str:
     """Détecte une main et prédit la lettre qu'elle représente en ASL
@@ -13,15 +15,18 @@ def gradio_video(img_input: gr.Image) -> str:
     :param img_input: image contenant potentiellement une main.
     :return: lettre prédite.
     """
+    if img_input is None:
+        return ""
     
     image= Image(image_format= ImageFormat.SRGB, data= np.asarray(img_input))
     
     with detecteur() as d:
-        vecteurs_df = pd.DataFrame([extraire_vecteur(d, image)],columns=[f"{axe}{i}" for i in range(21) for axe in "xyz"], )
+        vecteur = extraire_vecteur(d, image)
+        if vecteur is None:
+            return "Aucune main détectée."
+        vecteurs_df = pd.DataFrame([vecteur],columns=[f"{axe}{i}" for i in range(21) for axe in "xyz"], )
 
-    modele=charger_modele(config.CHEMIN_MODELE)
-    
-    predite= prediction(modele, vecteurs_df)
+    predite= prediction(MODELE, vecteurs_df)
 
     return predite
     ##image_annotee = dessiner_sur_image(image.numpy_view(), resultat_detection)
