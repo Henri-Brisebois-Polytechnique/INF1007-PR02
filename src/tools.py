@@ -4,7 +4,7 @@ from exceptions import ModeleIntrouvableError
 
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions, vision
-from mediapipe.tasks.python.vision.hand_landmarker import HandLandmarker
+from mediapipe.tasks.python.vision.hand_landmarker import HandLandmarker, HandLandmarkerResult
 import numpy as np
 
 import time
@@ -52,18 +52,23 @@ def normaliser(points: np.ndarray) -> np.ndarray:
     centres = points - points[0]
     return (centres / np.max(np.linalg.norm(centres, axis=1))).ravel()
 
-def extraire_vecteur(detecteur, image: mp.Image) -> np.ndarray | None:
+def extraire_vecteur(detecteur : HandLandmarker, image: mp.Image, normaliser: bool = True) -> np.ndarray | HandLandmarkerResult | None:
     """Récupère les vecteurs d'une image avec MediaPipe pour le traitement par le classificateur.
     
     :param detecteur: objet HandLandmarker représentant le modèle MediaPipe
     :param image: image MediaPipe.
-    :return: tableau (63,) des coordonnées normalisées (de normaliser(points)).
+    :param normaliser: précise s'il faut normaliser
+    :return: vecteurs détectés dans l'image, en np.array si normalisé, en HandLandmarkerResult si non.
+
     """
     resultat = detecteur.detect(image)
     if not resultat.hand_landmarks:
         return None
-    points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
-    return normaliser(points)
+    if(normaliser):
+        points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
+        return normaliser(points)
+    else:
+        return resultat
 
 def chronometrer(fonction: Callable) -> Callable:
     """Décorateur qui affiche le temps d'exécution d'une fonction."""
