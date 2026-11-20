@@ -62,7 +62,7 @@ def build_interface() -> gr.Blocks:
     """
     with gr.Blocks() as demo:
         with gr.Tab("Live"):
-            cam = gr.ImageImage(sources=["webcam"],streaming=True)
+            cam = gr.Image(sources=["webcam"],streaming=True)
             lettre= gr.Label()
 
             cam.stream(
