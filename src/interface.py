@@ -2,7 +2,7 @@ import numpy as np
 
 import mediapipe as mp
 from mediapipe import Image, ImageFormat
-from mediapipe.tasks import python
+from mediapipe.tasks.python.vision.hand_landmarker import HandLandmarkerResult
 from mediapipe.tasks.python import vision
 from mediapipe.tasks.python.vision import drawing_utils
 from mediapipe.tasks.python.vision import drawing_styles
@@ -15,7 +15,7 @@ import pandas as pd
 import gradio as gr
 
 COLONNES = [f"{axe}{i}" for i in range(21) for axe in "xyz"]
-MODELE=charger_modele(config.CHEMIN_MODELE)
+MODELE=charger_modele(config.CHEMIN_MODELE_FORET)
 d= detecteur()
 
 
@@ -33,7 +33,7 @@ def gradio_video(img_input: Image) -> str:
 
     image = Image(image_format=ImageFormat.SRGB, data=np.ascontiguousarray(img_input))
 
-    resultat = extraire_vecteur(d, image, normaliser=False)   # no `with d:`
+    resultat = extraire_vecteur(d, image, norm=False)   # no `with d:`
     if resultat is None:
         return "Aucune main détectée.", img_input
 
@@ -56,7 +56,13 @@ def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame) -> str:
     return modele.predict(vecteurs)[0]
 
 
-def dessiner_sur_image(rgb_image, resultat_detection):
+def dessiner_sur_image(rgb_image: Image, resultat_detection: HandLandmarkerResult) ->Image:
+    """Dessine les landmarks sur une image
+
+    :param rgb_image: l'image à annoter.
+    :param resultat_detection: les vecteurs à dessiner.
+    :return: l'image annotée
+    """
     hand_landmarks= resultat_detection.hand_landmarks
 
     annotated = np.copy(rgb_image)
