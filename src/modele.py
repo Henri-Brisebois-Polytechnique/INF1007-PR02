@@ -1,4 +1,4 @@
-from config import GRAINE, COLONNE_CIBLE, PERSONNES_TRAIN, CHEMIN_CSV, CHEMIN_MODELE_FORET, CHEMIN_META_FORET, CHEMIN_MODELE_HGBOOST, CHEMIN_META_HGBOOST 
+from config import GRAINE, COLONNE_CIBLE, PERSONNES_TRAIN, CHEMIN_CSV, CHEMIN_MODELE_FORET, CHEMIN_META_FORET, CHEMIN_MODELE_HGBOOST, CHEMIN_META_HGBOOST, CHEMIN_MODELE_REGRESSION, CHEMIN_META_REGRESSION
 from donnees import JeuDonnees, charger_csv
 from tools import chronometrer
 from exceptions import EntrainementImpossibleError
@@ -11,9 +11,10 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
 
 class Modele:
-    """Modele qui peut être entraîné sur un jeu de données traîté"""
+    """Contient toutes les fonctions utilisées pour l'entraînement de modèles"""
 
     def __init__(self) -> None:
         pass            
@@ -70,6 +71,7 @@ class Modele:
             json.dump(self.creer_metadonnees(X), fichier, indent=2, ensure_ascii=False)
 
 class Foret(Modele):
+    """Modele de type RandomForestClassifier qui peut être entraîné sur un jeu de données traîté"""
 
     def __init__(self) -> None:
         self._modele = self.construire_modele_foret()
@@ -83,6 +85,7 @@ class Foret(Modele):
         return RandomForestClassifier(n_estimators=200, random_state=GRAINE, n_jobs=-1)
 
 class HGBoost(Modele):
+    """Modele de type HistGradientBoostingClassifier qui peut être entraîné sur un jeu de données traîté"""
 
     def __init__(self) -> None:
         self._modele = self.construire_modele_gboost()
@@ -94,6 +97,20 @@ class HGBoost(Modele):
         Renvoie : un HistGradientBoostingClassifier avec 200 itérations, avec une graine fixe.
         """
         return HistGradientBoostingClassifier(max_iter=200, early_stopping=False, random_state=GRAINE)
+
+class RegressionLogistique(Modele):
+    """Modele de type LogisticRegression qui peut être entraîné sur un jeu de données traîté"""
+    def __init__(self) -> None:
+        self._modele = self.construire_modele_regressionlog()
+
+    @staticmethod
+    def construire_modele_regressionlog() -> LogisticRegression:
+        """Construit la régression logistique (non entraînée).
+    
+        Renvoie : un LogisticRegression avec 1000 itérations, avec une graine fixe.
+        """ 
+        return LogisticRegression(max_iter=1000, random_state=GRAINE)
+
 
 def main() -> Modele:
     """Enchaîne tout l'entraînement : chargement, filtrage, entraînement, sauvegarde.
@@ -111,6 +128,10 @@ def main() -> Modele:
     hgboost = HGBoost()
     hgboost.entrainer(entrees_X, entrees_y)
     hgboost.sauvegarder(entrees_X, CHEMIN_MODELE_HGBOOST, CHEMIN_META_HGBOOST)
+
+    regression = RegressionLogistique()
+    regression.entrainer(entrees_X, entrees_y)
+    regression.sauvegarder(entrees_X, CHEMIN_MODELE_REGRESSION, CHEMIN_META_REGRESSION)
 
     return foret
 
