@@ -1,3 +1,4 @@
+from gradio.components.image_editor import WebcamOptions
 import numpy as np
 import mediapipe as mp
 from mediapipe import Image, ImageFormat
@@ -6,7 +7,7 @@ from mediapipe.tasks.python import vision
 from mediapipe.tasks.python.vision import drawing_utils
 from mediapipe.tasks.python.vision import drawing_styles
 
-from tools import detecteur, extraire_vecteur, charger_modele, normaliser
+from tools import detecteur, extraire_vecteur, charger_modele, vecteur_depuis_resultat
 from sklearn.ensemble import RandomForestClassifier
 from config import CHEMIN_MODELE_FORET
 import pandas as pd
@@ -33,8 +34,7 @@ def gradio_video(img_input: Image) -> tuple:
     if resultat is None:
         return "Aucune main détectée.", img_input
 
-    points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
-    vecteur = normaliser(points)          # or points.ravel(), see below
+    vecteur = vecteur_depuis_resultat(resultat)  # même traitement que l'entraînement (inversion de main incluse)
     df = pd.DataFrame([vecteur], columns=COLONNES)
 
     pred = list(prediction(MODELE, df).items())

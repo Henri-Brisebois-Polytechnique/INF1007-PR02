@@ -66,11 +66,22 @@ def extraire_vecteur(detecteur : HandLandmarker, image: mp.Image, norm: bool = T
     if not resultat.hand_landmarks:
         return None
     if norm:
-        points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
-        if resultat.handedness[0][0].category_name != MAIN_DU_JEU:
-            points[:, 0] *= -1  # autre main = image miroir : inverser x la ramène à celle du jeu
-        return normaliser(points)
+        return vecteur_depuis_resultat(resultat)
     return resultat
+
+def vecteur_depuis_resultat(resultat: HandLandmarkerResult) -> np.ndarray:
+    """Convertit une détection MediaPipe en vecteur normalisé pour le classificateur.
+
+    Si la main détectée n'est pas celle du jeu de données, les x sont inversés
+    (image miroir) pour la ramener dans la même orientation que l'entraînement.
+
+    :param resultat: détection MediaPipe contenant au moins une main.
+    :return: tableau (63,) des coordonnées normalisées.
+    """
+    points = np.array([[p.x, p.y, p.z] for p in resultat.hand_landmarks[0]])
+    if resultat.handedness[0][0].category_name != MAIN_DU_JEU:
+        points[:, 0] *= -1  # autre main = image miroir : inverser x la ramène à celle du jeu
+    return normaliser(points)
 
 def chronometrer(fonction: Callable) -> Callable:
     """Décorateur qui affiche le temps d'exécution d'une fonction."""
