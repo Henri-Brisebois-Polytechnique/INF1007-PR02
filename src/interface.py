@@ -1,5 +1,4 @@
 import numpy as np
-
 import mediapipe as mp
 from mediapipe import Image, ImageFormat
 from mediapipe.tasks.python.vision.hand_landmarker import HandLandmarkerResult
@@ -7,19 +6,16 @@ from mediapipe.tasks.python import vision
 from mediapipe.tasks.python.vision import drawing_utils
 from mediapipe.tasks.python.vision import drawing_styles
 
-
 from tools import detecteur, extraire_vecteur, charger_modele, normaliser
 from sklearn.ensemble import RandomForestClassifier
-import config
+from config import CHEMIN_MODELE_FORET
 import pandas as pd
 import gradio as gr
 
 COLONNES = [f"{axe}{i}" for i in range(21) for axe in "xyz"]
-MODELE=charger_modele(config.CHEMIN_MODELE_FORET)
-d= detecteur()
-
-
-
+MODELE=charger_modele(CHEMIN_MODELE_FORET)
+MODELE.n_jobs = 1
+d = detecteur()
 
 def gradio_video(img_input: Image) -> str:
 
@@ -77,10 +73,6 @@ def dessiner_sur_image(rgb_image: Image, resultat_detection: HandLandmarkerResul
         )
     return annotated
 
-    
-
-
-
 def build_interface() -> gr.Blocks:
     """Construit l'interface Gradio.
 
@@ -88,22 +80,15 @@ def build_interface() -> gr.Blocks:
     """
     with gr.Blocks() as demo:
         with gr.Tab("Live"):
-            out_img= gr.Image(label="Vidéo annotée", height=480)
+            out_img= gr.Image(label="Vidéo annotée", height=480, format="jpeg")
             out_text= gr.Textbox(label= "Lettre prédite")
 
             cam = gr.Image(sources=["webcam"],streaming=True,
-                           label="Webcam (input)", height=150)
-
-
+                           label="Webcam (input)", height=150, webcam_options=gr.WebcamOptions(constraints={"video":{"width": 640, "height":480}}))
             cam.stream(
                 fn=gradio_video,
                 inputs=cam,
                 outputs=[out_text, out_img],
-                stream_every=0.1
+                stream_every=0.05
             )
-
-        
-        
-        
     return demo
-
