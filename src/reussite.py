@@ -2,9 +2,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from tools import detecteur, charger_image, extraire_vecteur, chronometrer, charger_modele
-from config import RACINE, DOSSIER_IMAGES_TEST, PERSONNES_TEST,CHEMIN_MODELE_FORET,CHEMIN_MODELE_HGBOOST
+from config import RACINE, DOSSIER_IMAGES_TEST, PERSONNES_TEST,CHEMIN_MODELE_FORET,CHEMIN_MODELE_HGBOOST, CHEMIN_MODELE_REGRESSION
 
-modeles = [CHEMIN_MODELE_FORET,CHEMIN_MODELE_HGBOOST]
+modeles = [CHEMIN_MODELE_FORET,CHEMIN_MODELE_HGBOOST,CHEMIN_MODELE_REGRESSION]
 
 def verifier_dossier(dossier: str) -> None:
     """Vérifie que le dossier d'images existe.
@@ -77,6 +77,8 @@ def main() -> None:
             nom = "RandomForestClassifier"
         elif m == CHEMIN_MODELE_HGBOOST:
             nom = "HGBoost"
+        else:
+            nom = "RégressionLogistique"
         generer_graphique(par_classe, nom)
         print(f"Global : {df['réussite'].mean():.2%}")
 
