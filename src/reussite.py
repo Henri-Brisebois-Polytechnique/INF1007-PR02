@@ -2,7 +2,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from tools import detecteur, charger_image, extraire_vecteur, chronometrer, charger_modele
-from config import RACINE, DOSSIER_IMAGES_TEST, PERSONNES_TEST,CHEMIN_MODELE
+from config import RACINE, DOSSIER_IMAGES_TEST, PERSONNES_TEST,CHEMIN_MODELE_FORET,CHEMIN_MODELE_HGBOOST
+
+modeles = [CHEMIN_MODELE_FORET,CHEMIN_MODELE_HGBOOST]
 
 def verifier_dossier(dossier: str) -> None:
     """Vérifie que le dossier d'images existe.
@@ -27,7 +29,13 @@ def iterer_images(dossier: str):
         for nom in sorted(os.listdir(os.path.join(dossier, classe))):
             yield os.path.join(dossier, classe, nom), classe
 
-def generer_graphique(donnees):
+def generer_graphique(donnees: pd.DataFrame, modele: str) -> None:
+    """Génère les graphiques de taux de réussite de chaque modèle.
+
+    :param donnees: DataFrame pandas contenant les taux de réussite avec leur classe
+    :param modele: chaîne servant à identifier le modèle testé
+    
+    """
     donnees = donnees.sort_values(ascending=False, kind="stable")  # pire classe en haut
     fig, ax = plt.subplots(figsize=(8, 10))
     couleurs = ["tab:red" if taux < 50 else "tab:blue" for taux in donnees]
@@ -36,36 +44,41 @@ def generer_graphique(donnees):
     ax.axvline(donnees.mean(), color="gray", linestyle="--",
                label=f"Moyenne des classes : {donnees.mean():.0f} %")
     ax.set_xlim(0, 110)
-    ax.set_title("Taux de réussite du modèle par classe")
+    ax.set_title(f"Taux de réussite du modèle {modele} par classe")
     ax.set_xlabel("Taux de réussite (%)")
     ax.set_ylabel("Classe")
     ax.legend(loc="upper right")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
-    plt.savefig(os.path.join(RACINE, "reussite.png"), dpi=150)
+    plt.savefig(os.path.join(RACINE, f"reussite_{modele}.png"), dpi=150)
     plt.show()
 
 @chronometrer
 def main() -> None:
     verifier_dossier(DOSSIER_IMAGES_TEST)
-    modele = charger_modele(CHEMIN_MODELE) # garder le retour
-    lignes = [] # une entrée par image
-    with detecteur() as d:
-        for chemin, classe in iterer_images(DOSSIER_IMAGES_TEST):
-            personne = os.path.basename(chemin).split("_")[0]
-            if personne not in PERSONNES_TEST:
-                continue
-            vecteur = extraire_vecteur(d, charger_image(chemin, marge=True))
-            if vecteur is None:
-                lignes.append((classe, False)) # main non détectée = échec
-                continue
-            vecteur_df = pd.DataFrame([vecteur], columns=[f"{axe}{i}" for i in range(21) for axe in "xyz"], )
-            prediction = modele.predict(vecteur_df)[0]
-            lignes.append((classe, prediction == classe)) # (classe, False) si pas bonne prédiction, (classe, True) sinon
-    df = pd.DataFrame(lignes, columns=["classe", "réussite"])
-    par_classe = df.groupby("classe")["réussite"].mean() * 100 # taux par classe, en pourcentage
-    generer_graphique(par_classe)
-    print(f"Global : {df['réussite'].mean():.2%}")
+    for m in modeles:
+        modele = charger_modele(m) # garder le retour
+        lignes = [] # une entrée par image
+        with detecteur() as d:
+            for chemin, classe in iterer_images(DOSSIER_IMAGES_TEST):
+                personne = os.path.basename(chemin).split("_")[0]
+                if personne not in PERSONNES_TEST:
+                    continue
+                vecteur = extraire_vecteur(d, charger_image(chemin, marge=True))
+                if vecteur is None:
+                    lignes.append((classe, False)) # main non détectée = échec
+                    continue
+                vecteur_df = pd.DataFrame([vecteur], columns=[f"{axe}{i}" for i in range(21) for axe in "xyz"], )
+                prediction = modele.predict(vecteur_df)[0]
+                lignes.append((classe, prediction == classe)) # (classe, False) si pas bonne prédiction, (classe, True) sinon
+        df = pd.DataFrame(lignes, columns=["classe", "réussite"])
+        par_classe = df.groupby("classe")["réussite"].mean() * 100 # taux par classe, en pourcentage
+        if m == CHEMIN_MODELE_FORET:
+            nom = "RandomForestClassifier"
+        elif m == CHEMIN_MODELE_HGBOOST:
+            nom = "HGBoost"
+        generer_graphique(par_classe, nom)
+        print(f"Global : {df['réussite'].mean():.2%}")
 
 
 if __name__ == "__main__":
