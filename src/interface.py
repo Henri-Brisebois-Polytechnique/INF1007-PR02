@@ -17,12 +17,12 @@ MODELE=charger_modele(CHEMIN_MODELE_FORET)
 MODELE.n_jobs = 1
 d = detecteur()
 
-def gradio_video(img_input: Image) -> str:
+def gradio_video(img_input: Image) -> tuple:
 
     """Détecte une main et prédit la lettre qu'elle représente en ASL
 
     :param img_input: image contenant potentiellement une main.
-    :return: lettre prédite.
+    :return: tuple regroupant les trois classes aux plus hautes probabilités et l'objet Image de l'image annotée.
     """
     if img_input is None:
         return "", None
@@ -37,19 +37,25 @@ def gradio_video(img_input: Image) -> str:
     vecteur = normaliser(points)          # or points.ravel(), see below
     df = pd.DataFrame([vecteur], columns=COLONNES)
 
-    return prediction(MODELE, df), dessiner_sur_image(img_input, resultat)
+    pred = list(prediction(MODELE, df).items())
+    top = f"{pred[0][0]} ({pred[0][1]*100:.2f} %)\n\nAutres possibilités : "
+    for p in pred[1:3]:
+        top += f"{p[0]} ({p[1]*100:.2f} %), "
+    return top[:-2], dessiner_sur_image(img_input, resultat)
 
-def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame) -> str:
+def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame) -> dict:
     """Prédit une lettre.
     
     Le tableau des vecteurs doit avoir en première ligne l'identifiant de chaque composante sous la forme x0, y0, z0, x1, y1, z1...
 
     :param modele: objet RandomForestClassifier représentant le modèle de prédiction.
     :param vecteurs: tableau DataFrame (2,63) des composantes x,y,z des 21 vecteurs représentant une main.
-    :return: lettre prédite.
+    :return: dictionnaire trié des probabilités associées à chaque classe.
     """
-    
-    return modele.predict(vecteurs)[0]
+
+    probas = modele.predict_proba(vecteurs)[0]
+    dic = {str(c): float(p) for c,p in zip(modele.classes_, probas)} # zip(a,b) retourne sous la forme [(a1,b1),(a2,b2),...,(an,bn)] 
+    return dict(sorted(dic.items(), key=lambda p: p[1], reverse=True))
 
 
 def dessiner_sur_image(rgb_image: Image, resultat_detection: HandLandmarkerResult) ->Image:
@@ -81,7 +87,7 @@ def build_interface() -> gr.Blocks:
     with gr.Blocks() as demo:
         with gr.Tab("Live"):
             out_img= gr.Image(label="Vidéo annotée", height=480, format="jpeg")
-            out_text= gr.Textbox(label= "Lettre prédite")
+            out_text= gr.Textbox(label= "Lettres prédites")
 
             cam = gr.Image(sources=["webcam"],streaming=True,
                            label="Webcam (input)", height=150, webcam_options=gr.WebcamOptions(constraints={"video":{"width": 640, "height":480}}))
