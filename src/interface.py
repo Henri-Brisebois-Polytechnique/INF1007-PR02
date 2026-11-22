@@ -8,22 +8,16 @@ from mediapipe.tasks.python.vision import drawing_utils
 from mediapipe.tasks.python.vision import drawing_styles
 
 from tools import detecteur, extraire_vecteur, charger_modele, vecteur_depuis_resultat
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from config import CHEMIN_MODELE_FORET, CHEMIN_ALPHABET
 import pandas as pd
 import gradio as gr
-
-
 
 COLONNES = [f"{axe}{i}" for i in range(21) for axe in "xyz"]
 MODELE=charger_modele(CHEMIN_MODELE_FORET)
 MODELE.n_jobs = 1
 LETTRES = [str(c) for c in MODELE.classes_]
 d = detecteur()
-
-
-
-
 
 def gradio_video(img_input: Image) -> tuple:
 
@@ -52,12 +46,12 @@ def gradio_video(img_input: Image) -> tuple:
         top += f"   {p[0]} ({p[1]*100:.2f} %),\n"
     return top[:-2], dessiner_sur_image(img_input, resultat), donnees_graphique(probas),gr.update(height=1)
 
-def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame)->list:
+def prediction(modele: LogisticRegression, vecteurs: pd.DataFrame)->list:
     """Prédit une lettre.
     
     Le tableau des vecteurs doit avoir en première ligne l'identifiant de chaque composante sous la forme x0, y0, z0, x1, y1, z1...
 
-    :param modele: objet RandomForestClassifier représentant le modèle de prédiction.
+    :param modele: objet LogisticRegression représentant le modèle de prédiction.
     :param vecteurs: tableau DataFrame (2,63) des composantes x,y,z des 21 vecteurs représentant une main.
     :return: dictionnaire trié des probabilités associées à chaque classe.
     """
