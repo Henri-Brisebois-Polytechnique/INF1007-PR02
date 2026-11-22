@@ -33,7 +33,7 @@ def gradio_video(img_input: Image) -> tuple:
 
     resultat = extraire_vecteur(d, image, norm=False)   # no `with d:`
     if resultat is None:
-        return "Aucune main détectée.", img_input, gr.skip(), gr.update(height=1)
+        return "Aucune main détectée.", gr.update(value=img_input, visible=True), gr.skip(), gr.update(height=1)
 
     vecteur = vecteur_depuis_resultat(resultat)  # même traitement que l'entraînement (inversion de main incluse)
     df = pd.DataFrame([vecteur], columns=COLONNES)
@@ -44,7 +44,8 @@ def gradio_video(img_input: Image) -> tuple:
     top = f"{probas_decroissant[0][0]} ({probas_decroissant[0][1]*100:.2f} %)\n\nAutres possibilités :\n"
     for p in probas_decroissant[1:3]:
         top += f"   {p[0]} ({p[1]*100:.2f} %),\n"
-    return top[:-2], dessiner_sur_image(img_input, resultat), donnees_graphique(probas), gr.update(height=1)
+    annotee = dessiner_sur_image(img_input, resultat)
+    return top[:-2], gr.update(value=annotee, visible=True), donnees_graphique(probas), gr.update(height=1)
 
 def prediction(modele: LogisticRegression, vecteurs: pd.DataFrame)->list:
     """Prédit une lettre.
@@ -102,8 +103,13 @@ def build_interface() -> gr.Blocks:
             #Colonne de gauche : vidéo annotée + graphique
             with gr.Column(scale=3 ):
 
+                #Input webcam
+                cam = gr.Image(sources=["webcam"],streaming=True, show_label= False,
+                               label="Webcam (input)", buttons=[])
+
+
                 #Webcam annotée avec vecteurs
-                out_img= gr.Image(label="Vidéo annotée", format="jpeg", show_label=False)
+                out_img= gr.Image(label="Vidéo annotée", format="jpeg", show_label=False, visible = False)
 
                 #Graphique
                 graphique = gr.BarPlot(
@@ -118,11 +124,8 @@ def build_interface() -> gr.Blocks:
             #Colonne de droite
             with gr.Column(scale=1 ):
 
-                #Input webcam
-                cam = gr.Image(sources=["webcam"],streaming=True, show_label= False,
-                               label="Webcam (input)", buttons=[])
-
                 #Guide Alphabet
+                gr.Markdown("**Alphabet du ASL**")
                 alphabet= gr.Image(value= CHEMIN_ALPHABET, format= "jpeg", show_label=False, buttons=[])
 
                 #Textbox prédiction
