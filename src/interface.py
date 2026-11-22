@@ -12,6 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from config import CHEMIN_MODELE_FORET, CHEMIN_ALPHABET
 import pandas as pd
 import gradio as gr
+from matplotlib.figure import Figure
 
 COLONNES = [f"{axe}{i}" for i in range(21) for axe in "xyz"]
 MODELE=charger_modele(CHEMIN_MODELE_FORET)
@@ -30,24 +31,26 @@ def gradio_video(img_input: Image) -> tuple:
     :return: tuple regroupant les trois classes aux plus hautes probabilités et l'objet Image de l'image annotée.
     """
     if img_input is None:
-        return "", None, gr.update(height=1)
+        return "", None,None, gr.update(height=1)
 
     image = Image(image_format=ImageFormat.SRGB, data=np.ascontiguousarray(img_input))
 
     resultat = extraire_vecteur(d, image, norm=False)   # no `with d:`
     if resultat is None:
-        return "Aucune main détectée.", img_input, gr.update(height=1)
+        return "Aucune main détectée.", img_input,None, gr.update(height=1)
 
     vecteur = vecteur_depuis_resultat(resultat)  # même traitement que l'entraînement (inversion de main incluse)
     df = pd.DataFrame([vecteur], columns=COLONNES)
 
-    pred = list(prediction(MODELE, df).items())
-    top = f"{pred[0][0]} ({pred[0][1]*100:.2f} %)\n\nAutres possibilités :\n"
-    for p in pred[1:3]:
-        top += f"   {p[0]} ({p[1]*100:.2f} %),\n"
-    return top[:-2], dessiner_sur_image(img_input, resultat), gr.update(height=1)
+    probas= prediction(MODELE, df)
+    probas_decroissant= sorted(probas, key=lambda p: p[1], reverse=True)
 
-def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame) -> dict:
+    top = f"{probas_decroissant[0][0]} ({probas_decroissant[0][1]*100:.2f} %)\n\nAutres possibilités :\n"
+    for p in probas_decroissant[1:3]:
+        top += f"   {p[0]} ({p[1]*100:.2f} %),\n"
+    return top[:-2], dessiner_sur_image(img_input, resultat), generer_graphique(probas),gr.update(height=1)
+
+def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame)->dict:
     """Prédit une lettre.
     
     Le tableau des vecteurs doit avoir en première ligne l'identifiant de chaque composante sous la forme x0, y0, z0, x1, y1, z1...
@@ -58,7 +61,9 @@ def prediction(modele: RandomForestClassifier, vecteurs: pd.DataFrame) -> dict:
     """
 
     probas = modele.predict_proba(vecteurs)[0]
-    dic = {str(c): float(p) for c,p in zip(modele.classes_, probas)} # zip(a,b) retourne sous la forme [(a1,b1),(a2,b2),...,(an,bn)] 
+    
+    return list(zip(modele.classes_, probas)) # zip(a,b) retourne sous la forme [(a1,b1),(a2,b2),...,(an,bn)] 
+    return dic
     return dict(sorted(dic.items(), key=lambda p: p[1], reverse=True))
 
 
@@ -82,6 +87,30 @@ def dessiner_sur_image(rgb_image: Image, resultat_detection: HandLandmarkerResul
             drawing_styles.get_default_hand_connections_style(),
         )
     return annotated
+
+def generer_graphique(predictions: list) -> Figure:
+    """Génère les graphiques de taux de réussite de chaque modèle.
+
+    :param predictions: liste de tuples (lettre, pourcentage de probabilite)
+    :return: 
+    """
+    ordre = sorted(predictions, key=lambda p: p[0])   # alphabetical: A first, Z last
+    lettres = [lettre for lettre, _ in ordre]
+    valeurs = [proba*100 for _, proba in ordre]
+
+    fig = Figure(figsize=(5, 8))
+    ax = fig.subplots()
+    ax.barh(lettres, valeurs)
+
+    ax.invert_yaxis()           # A at the top, Z at the bottom
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Probabilité (%)")
+    ax.set_ylabel("Lettre")
+    ax.set_title("Probabilité de chaque lettre")
+    fig.tight_layout()
+    return fig
+
+
 
 def build_interface() -> gr.Blocks:
     """Construit l'interface Gradio.
@@ -111,13 +140,13 @@ def build_interface() -> gr.Blocks:
                     alphabet= gr.Image(value= CHEMIN_ALPHABET, format= "jpeg", show_label=False, scale=2, buttons=[])
                 #Graphique
                 with gr.Tab("Graphique"):
-                    graphique= gr.Textbox(value= "GRAPH HERE", show_label=False, scale=2)
+                    graphique= gr.Plot(show_label=False,scale=2)
 
                 #Fonction par frame roule à chaque 0.01s
                 cam.stream(
                     fn=gradio_video,
                     inputs=cam,
-                    outputs=[out_text, out_img, cam],
+                    outputs=[out_text, out_img,graphique, cam],
                     stream_every=0.01
                 )
 
