@@ -21,3 +21,6 @@ CHEMIN_MODELE_HGBOOST = os.path.join("modeles", "hgboost", "modele.joblib")
 CHEMIN_META_HGBOOST = os.path.join("modeles", "hgboost", "metadonnees.json")
 CHEMIN_MODELE_REGRESSION = os.path.join("modeles", "regressionlogistique", "modele.joblib")
 CHEMIN_META_REGRESSION = os.path.join("modeles", "regressionlogistique", "metadonnees.json")
+
+#Variables pour l'application Gradio
+CHEMIN_ALPHABET= os.path.join("assets","alphabet_asl.jpg")
