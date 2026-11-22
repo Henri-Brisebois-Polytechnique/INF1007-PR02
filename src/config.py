@@ -23,4 +23,4 @@ CHEMIN_MODELE_REGRESSION = os.path.join("modeles", "regressionlogistique", "mode
 CHEMIN_META_REGRESSION = os.path.join("modeles", "regressionlogistique", "metadonnees.json")
 
 #Variables pour l'application Gradio
-CHEMIN_ALPHABET= os.path.join("assets","alphabet_asl.jpg")
+CHEMIN_ALPHABET= os.path.join("assets","asl.png")
