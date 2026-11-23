@@ -54,7 +54,7 @@ def prediction(modele: LogisticRegression, vecteurs: pd.DataFrame)->list:
 
     :param modele: objet LogisticRegression représentant le modèle de prédiction.
     :param vecteurs: tableau DataFrame (2,63) des composantes x,y,z des 21 vecteurs représentant une main.
-    :return: dictionnaire trié des probabilités associées à chaque classe.
+    :return: liste probabilités associées à chaque classe.
     """
 
     probas = modele.predict_proba(vecteurs)[0]
