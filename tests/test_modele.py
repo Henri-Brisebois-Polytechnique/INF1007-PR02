@@ -3,6 +3,7 @@
 import os
 import json
 import joblib
+import pytest
 
 CHEMIN_MODELE_FORET = os.path.join(os.path.dirname(__file__), "..", "modeles", "foret", "modele.joblib")
 CHEMIN_META_FORET = os.path.join(os.path.dirname(__file__), "..", "modeles", "foret", "metadonnees.json")
@@ -27,25 +28,23 @@ def lire_json(chemin_json):
         contenu = json.load(f)
     return contenu
 
-for c in CHEMINS_MODELES:
+@pytest.mark.parametrize("chemin_modele", CHEMINS_MODELES)
+def test_modele_existe(chemin_modele):
+    assert os.path.isfile(chemin_modele)
 
-    def test_modele_existe():
-        print("allo")
-        assert os.path.isfile(c)
+@pytest.mark.parametrize("chemin_meta", CHEMINS_METAS)
+def test_metadonnes_existe(chemin_meta):
+    assert os.path.isfile(chemin_meta)
 
+@pytest.mark.parametrize("chemin_meta", CHEMINS_METAS)
+def test_meta_non_vide(chemin_meta):
+    contenu = lire_json(chemin_meta)
+    assert len(contenu) > 0
 
-for c in CHEMINS_METAS:
-
-    def test_metadonnes_existe():
-        assert os.path.isfile(c)
-
-    def test_meta_non_vide():
-        contenu = lire_json(c)
-        assert len(contenu) > 0
-
-    def test_meta_structure():
-        contenu = lire_json(c)
-        cles = []
-        for i in contenu.keys():
-            cles.append(i)
-        assert cles == META_NOM_CLES
+@pytest.mark.parametrize("chemin_meta", CHEMINS_METAS)
+def test_meta_structure(chemin_meta):
+    contenu = lire_json(chemin_meta)
+    cles = []
+    for i in contenu.keys():
+        cles.append(i)
+    assert cles == META_NOM_CLES
