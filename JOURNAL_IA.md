@@ -11,6 +11,8 @@
 | Claude | edit the code you suggested to me while removing functools and changing "from typing import Callable" to "`from collections.abc import Callable`". do not change anything about joblib. in addition, make the edits so that we no longer remove x0 x1 and x2 from the analysed dataset. | Voir réponse 8 | Lecture et révision du code présenté par Claude | Conserver la structure proposée par Claude, mais avec certaines modifications. Enlever l'appel d'erreurs (le cours n'avait pas encore été passé. ajout de l'appel d'erreurs plus tard). |
 | Claude | I have updated the CSV file to the one I'm currently using. We removed the "main" column. Adjust the code to match this. Explain to me what GRAINE is for. Explain what from exceptions import DonneeInvalideError is used for, and whether or not i can remove it. I'm not writing tests for my code yet. | Voir réponse 9 | Lecture des réponses offertes par Claude pour mieux comprendre le code. Test du code dans VScode. | Conservation de la structure de code proposée par Claude, avec modifications pour augmenter la compréhension du code basée sur mes lectures. |
 | Claude | Suggest something to go in "metrique." Additionally, add lines at the end to show how we're going to call the functions (and suggest a chemin modele and chemin meta). | Voir réponse 10 | Lecture et test du code généré par Claude | Conservation de la structure proposée par Claude, avec plusieurs modifications. Écriture de certain morceaux de code manuellement pour correspondre avec les objectifs du projet. |
+| Claude | Why doesnt this work, it says prediction() wont work since vecteur is NoneType, but it shouldnt pass a nonetype: | Voir réponse 11 | Claude à tort, la fonction à un flag qui permet de préciser quel forme on veut pour le output, ce n'était pas le problème. | J'ai cherché plus loin et j'ai réalisé que le problème était plus tard, je n'avait pas transformé les vecteurs en DataFrame. |
+
 
 # RÉPONSES COMPLÈTES
 
@@ -631,3 +633,16 @@ python src/modele.py
 ```
 
 This assumes `donnees.py` and `exceptions.py` are in the same `src/` folder, and that `donnees.py` no longer requires the `main` column (see my previous message). When you build `main.py`, you can move this block there as the entry point. Until then, running it confirms that loading, training and saving work end to end.
+
+## Reponse 11
+
+dessiner_sur_image receives the wrong thing
+
+Your drawing function reads resultat_detection.hand_landmarks, which only exists on MediaPipe's detection result. But you pass it vecteur, a flat list of 63 numbers, so it will raise an AttributeError as soon as a hand is detected. Gradio then shows an error, which looks like detection stopped.
+
+You need the raw result for drawing and the vector for prediction. Since extraire_vecteur is a teammate's function, the cleanest fix is to split it into two pieces:
+
+one function that runs d.detect(image) and returns the result;
+one that turns a result into the 63-value vector (so the vector logic stays testable).
+
+Then gradio_video calls detect once, checks resultat.hand_landmarks, builds the vector from it, predicts, and draws from the same resultat. Agree on that split with your teammates, since it touches shared code.
