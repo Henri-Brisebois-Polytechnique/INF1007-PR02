@@ -9,12 +9,12 @@ from mediapipe.tasks.python.vision import drawing_styles
 
 from tools import detecteur, extraire_vecteur, charger_modele, vecteur_depuis_resultat
 from sklearn.linear_model import LogisticRegression
-from config import CHEMIN_MODELE_FORET, CHEMIN_ALPHABET
+from config import CHEMIN_MODELE_REGRESSION, CHEMIN_ALPHABET
 import pandas as pd
 import gradio as gr
 
 COLONNES = [f"{axe}{i}" for i in range(21) for axe in "xyz"]
-MODELE=charger_modele(CHEMIN_MODELE_FORET)
+MODELE=charger_modele(CHEMIN_MODELE_REGRESSION)
 MODELE.n_jobs = 1
 LETTRES = [str(c) for c in MODELE.classes_]
 d = detecteur()
