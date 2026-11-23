@@ -106,7 +106,14 @@ Pour un rapport HTML détaillé (ligne par ligne), ouvrir `htmlcov/index.html` a
 pytest --cov=src --cov-report=html
 ```
 
-À FAIRE
+Résultat : **16 %** (19 tests réussis).
+
+| Fichier | Couverture |
+| --- | --- |
+| `config.py`, `donnees.py`, `exceptions.py` | 100 % |
+| `modele.py`, `tools.py` | 0 % |
+| `interface.py`, `extraction.py`, `reussite.py`, `main.py` | 0 % |
+
 ## Références à la documentation
 
 - pandas; `read_csv` : https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
