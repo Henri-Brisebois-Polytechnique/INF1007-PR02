@@ -112,6 +112,16 @@ pytest --cov=src --cov-report=html
 - pandas; `read_csv` : https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
 - pandas; `Series.isin` : https://pandas.pydata.org/docs/reference/api/pandas.Series.isin.html
 - pandas; `DataFrame.drop` : https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.drop.html
+- NumPy; `array` : https://numpy.org/doc/stable/reference/generated/numpy.array.html
+- NumPy; `round` : https://numpy.org/doc/stable/reference/generated/numpy.round.html
+- NumPy; `pad` : https://numpy.org/doc/stable/reference/generated/numpy.pad.html
+- NumPy; `ascontiguousarray` : https://numpy.org/doc/stable/reference/generated/numpy.ascontiguousarray.html
+- NumPy; `copy` : https://numpy.org/doc/stable/reference/generated/numpy.copy.html
+- NumPy; `max` : https://numpy.org/doc/stable/reference/generated/numpy.max.html
+- NumPy; `linalg.norm` : https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html
+- NumPy; `ndarray.ravel` : https://numpy.org/doc/stable/reference/generated/numpy.ndarray.ravel.html
+- NumPy; `allclose` : https://numpy.org/doc/stable/reference/generated/numpy.allclose.html
+- NumPy; `isfinite` : https://numpy.org/doc/stable/reference/generated/numpy.isfinite.html
 - scikit-learn; `RandomForestClassifier` : https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
 - scikit-learn; `HistGradientBoostingClassifier` : https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html
 - scikit-learn; `LogisticRegression` : https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
