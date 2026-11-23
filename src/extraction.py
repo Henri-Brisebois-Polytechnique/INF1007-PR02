@@ -8,7 +8,7 @@ import csv
 import os
 import numpy as np
 from tools import detecteur, charger_image, extraire_vecteur, chronometrer
-from config import DOSSIER_SRC, RACINE, DOSSIER_IMAGES_TRAIN, CHEMIN_SORTIE
+from config import DOSSIER_IMAGES_TRAIN, CHEMIN_SORTIE
 
 def verifier_dossier(dossier: str) -> None:
     """Vérifie que le dossier d'images existe.
